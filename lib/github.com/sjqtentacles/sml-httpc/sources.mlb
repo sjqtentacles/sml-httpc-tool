@@ -1,0 +1,8 @@
+(* Vendored sml-httpc pure core: the sml-http codec (which vendors sml-uri)
+ * loaded first, then the Httpc client state machine. *)
+$(SML_LIB)/basis/basis.mlb
+
+../sml-http/sml-http.mlb
+
+httpc.sig
+httpc.sml

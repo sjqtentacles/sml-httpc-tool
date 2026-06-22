@@ -1,0 +1,4 @@
+(* CLI basis: the impure tool plus the command-line front end. *)
+$(SML_LIB)/basis/basis.mlb
+../src/httpc_tool.mlb
+httpc.sml

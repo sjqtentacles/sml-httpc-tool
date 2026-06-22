@@ -1,0 +1,6 @@
+(* MLB for the impure sml-httpc-tool: the vendored pure sml-httpc core (which
+ * vendors sml-http + sml-uri) loaded first, then the socket driver. *)
+$(SML_LIB)/basis/basis.mlb
+../lib/github.com/sjqtentacles/sml-httpc/sources.mlb
+httpc_tool.sig
+httpc_tool.sml
