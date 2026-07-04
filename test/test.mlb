@@ -1,0 +1,10 @@
+(* Test executable basis: the impure tool sources (which pull in the vendored
+ * sml-httpc core -> sml-http + sml-uri) plus the harness and the deterministic
+ * port-parsing suite. Only the pure `parsePort` surface is exercised; the
+ * socket driver is impure and not part of the byte-identical guarantee. *)
+$(SML_LIB)/basis/basis.mlb
+../src/httpc_tool.mlb
+harness.sml
+test_port.sml
+entry.sml
+main.sml

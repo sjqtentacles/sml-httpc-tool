@@ -20,10 +20,18 @@ machine; the IO tool is a thin, compiler-specific, unguaranteed driver.**
 - **Non-deterministic.** `fetch` talks to a live remote host; its result
   depends on the network, not just its inputs. It is therefore **not** part of
   the byte-identical dual-compiler test suite.
-- **No deterministic tests.** The protocol logic is fully tested in the pure
-  `sml-httpc` core against captured fixtures. Here, the only checks are
-  **compile** (CI builds the CLI under MLton and compile-checks the sources
-  under Poly/ML) and an optional manual `make smoke` (which requires network).
+- **Almost no deterministic tests.** The protocol logic is fully tested in the
+  pure `sml-httpc` core against captured fixtures. The socket driver itself is
+  checked only by **compile** (CI builds the CLI under MLton and compile-checks
+  the sources under Poly/ML) and an optional manual `make smoke` (network). The
+  one genuinely pure part of the tool — `parsePort`, which parses a TCP port
+  from an untrusted URL authority — **is** covered by a small byte-identical
+  suite (`make test` / `make test-poly`). It range-checks the port via `IntInf`,
+  bounded to a fixed 32-bit signed range, so an oversized value (past 2^31, or a
+  12-digit number) returns `NONE` instead of raising `Overflow`. That matters
+  because on this toolchain MLton's `Int` is 32-bit and Poly/ML's is 63-bit
+  (both fixed width; only `IntInf` is arbitrary precision), so an unchecked
+  parse would crash on MLton and diverge from Poly/ML.
 - **Plain HTTP only.** No TLS. HTTPS support waits for a future `sml-tls`; for
   now `https://` URLs would connect on port 443 in cleartext and fail. Use
   `http://` URLs.
@@ -32,6 +40,9 @@ machine; the IO tool is a thin, compiler-specific, unguaranteed driver.**
 
 ```
 make build       # build bin/httpc with MLton
+make test        # run the deterministic parsePort suite under MLton
+make test-poly   # run the deterministic parsePort suite under Poly/ML
+make all-tests   # both (byte-identical output)
 make poly-check  # compile-check all sources under Poly/ML (no network)
 make smoke       # build, then GET http://example.com (REQUIRES NETWORK)
 make clean
@@ -69,6 +80,7 @@ type request =
 
 val fetch       : request -> Http.response          (* one request, no redirects *)
 val fetchFollow : int -> request -> Http.response   (* follow up to N 3xx hops *)
+val parsePort   : string -> int option              (* pure; NONE if out of range *)
 ```
 
 `fetch` builds the request with `Httpc.buildRequest`, connects, sends the bytes,

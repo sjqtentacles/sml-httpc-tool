@@ -43,6 +43,19 @@ struct
          | NONE => (hp, ""))
     end
 
+  (* Parse a TCP port without ever raising Overflow. NONE for non-numeric,
+     empty, or out-of-range input. On this toolchain MLton's Int is 32-bit and
+     Poly/ML's is 63-bit (both fixed width; only IntInf is arbitrary), so a
+     plain Int.fromString raises Overflow on MLton for a value past 2^31 while
+     Poly/ML would accept it: a crash and a cross-compiler divergence. Parse via
+     IntInf and bound to a fixed 32-bit signed range so both compilers behave
+     identically. See the note in httpc_tool.sig. *)
+  fun parsePort portStr =
+    case IntInf.fromString portStr of
+        SOME n => if n >= ~2147483648 andalso n <= 2147483647
+                  then SOME (IntInf.toInt n) else NONE
+      | NONE => NONE
+
   fun resolve host =
     case NetHostDB.getByName host of
       SOME e => NetHostDB.addr e
@@ -52,7 +65,7 @@ struct
   fun exchange (conn0, hostport, bytes) =
     let
       val (host, portStr) = splitHostPort hostport
-      val port = case Int.fromString portStr of
+      val port = case parsePort portStr of
                    SOME p => p
                  | NONE => raise ToolError ("bad port: " ^ portStr)
       val addr = INetSock.toAddr (resolve host, port)
