@@ -43,6 +43,8 @@ make build       # build bin/httpc with MLton
 make test        # run the deterministic parsePort suite under MLton
 make test-poly   # run the deterministic parsePort suite under Poly/ML
 make all-tests   # both (byte-identical output)
+make example     # build + run the deterministic demo under MLton
+make example-poly  # run the demo under Poly/ML
 make poly-check  # compile-check all sources under Poly/ML (no network)
 make smoke       # build, then GET http://example.com (REQUIRES NETWORK)
 make clean
@@ -68,6 +70,37 @@ Connection: keep-alive
 ...
 
 <!doctype html><html ...>...</html>
+```
+
+## Example
+
+`make example` builds and runs [`examples/demo.sml`](examples/demo.sml), which
+exercises `parsePort` plus the pure `Uri`/`Http`/`Httpc` core entirely in
+memory — building a request, decoding a canned response, and resolving a
+redirect — without opening any socket (output is byte-identical under MLton
+and Poly/ML):
+
+```
+HttpcTool.parsePort on sample authorities:
+  8080 -> 8080
+  443 -> 443
+   -> NONE
+  99999999999999999999 -> NONE
+
+Httpc.buildRequest for GET http://example.com/status?fast=1:
+  hostport = example.com:80
+  bytes    =
+GET /status?fast=1 HTTP/1.1
+Host: example.com
+Accept: text/plain
+
+
+Decoding a canned response with Httpc.newConn/feed:
+  status    = 200 OK
+  body      = hello
+  keepAlive = true
+
+Httpc.redirectTarget for a 302 to "/new-place": http://example.com/new-place
 ```
 
 ## Library API

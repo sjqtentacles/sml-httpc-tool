@@ -5,6 +5,9 @@
 #   make test       build + run the deterministic port-parsing suite (MLton)
 #   make test-poly  run the deterministic port-parsing suite (Poly/ML)
 #   make all-tests  run the suite under both compilers
+#   make example    build + run the demo (MLton) -- pure Uri/Http/Httpc only,
+#                   no sockets
+#   make example-poly  run the demo under Poly/ML (use-loading)
 #   make poly-check load the sources under Poly/ML to confirm they compile
 #   make smoke      build, then fetch http://example.com (REQUIRES NETWORK)
 #   make clean      remove build artifacts
@@ -24,10 +27,12 @@ HTTPDIR    := lib/github.com/sjqtentacles/sml-http
 HTTPCDIR   := lib/github.com/sjqtentacles/sml-httpc
 CLI_MLB    := cli/httpc.mlb
 TEST_MLB   := test/sources.mlb
+EXAMPLE_MLB:= examples/sources.mlb
 SRCS       := $(wildcard $(URIDIR)/* $(HTTPDIR)/* $(HTTPCDIR)/* src/* cli/*) $(CLI_MLB)
 TEST_SRCS  := $(wildcard $(URIDIR)/* $(HTTPDIR)/* $(HTTPCDIR)/* src/* test/*) $(TEST_MLB)
+EXAMPLE_SRCS := $(wildcard $(URIDIR)/* $(HTTPDIR)/* $(HTTPCDIR)/* src/* examples/*) $(EXAMPLE_MLB)
 
-.PHONY: all build test test-poly verify-identical all-tests poly-check smoke clean
+.PHONY: all build test test-poly verify-identical all-tests example example-poly poly-check smoke clean
 
 all: build
 
@@ -50,6 +55,19 @@ poly test-poly:
 
 all-tests: test test-poly verify-identical
 
+example: $(BIN)/demo
+	./$(BIN)/demo
+
+$(BIN)/demo: $(EXAMPLE_SRCS) | $(BIN)
+	$(MLTON) -output $@ $(EXAMPLE_MLB)
+
+# Demos are top-level scripts (no `main`). This repo has no tools/polybuild
+# (it hand-rolls its Poly/ML loading, see test-poly/poly-check above), so run
+# the demo the same way: use-load the pure Uri -> Http -> Httpc chain plus the
+# (unused-by-the-demo, but harmless to load) tool sources, then demo.sml.
+example-poly:
+	printf 'use "$(URIDIR)/percent.sig";\nuse "$(URIDIR)/percent.sml";\nuse "$(URIDIR)/query.sig";\nuse "$(URIDIR)/query.sml";\nuse "$(URIDIR)/uri.sig";\nuse "$(URIDIR)/uri.sml";\nuse "$(HTTPDIR)/headers.sig";\nuse "$(HTTPDIR)/headers.sml";\nuse "$(HTTPDIR)/status.sig";\nuse "$(HTTPDIR)/status.sml";\nuse "$(HTTPDIR)/http.sig";\nuse "$(HTTPDIR)/http.sml";\nuse "$(HTTPCDIR)/httpc.sig";\nuse "$(HTTPCDIR)/httpc.sml";\nuse "src/httpc_tool.sig";\nuse "src/httpc_tool.sml";\nuse "examples/demo.sml";\n' | $(POLY) -q --error-exit
+
 # Compile-only check under Poly/ML: load every source (the Socket-based driver
 # included) so we know the tool stays buildable on Poly/ML too. No network.
 poly-check:
@@ -62,7 +80,7 @@ $(BIN):
 	mkdir -p $(BIN)
 
 clean:
-	rm -f $(BIN)/httpc $(BIN)/test-mlton
+	rm -f $(BIN)/httpc $(BIN)/test-mlton $(BIN)/demo
 
 # The dual-compiler contract: both suites must print byte-identical output.
 # Recursive make -s captures the raw suite stdout regardless of poly strategy.
