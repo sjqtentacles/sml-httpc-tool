@@ -42,13 +42,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y polyml libpolyml-dev
-      - name: Run tests
-        run: make test-poly
-      - name: Run example
-        run: make example-poly
       - name: Capture raw output
+        # This repo's Poly/ML targets hand-roll a printf|poly pipe (no
+        # linked bin/test-poly binary), so capture via `make -s` rather
+        # than assuming a binary exists.
         run: |
-          ./bin/test-poly > test-out.txt
+          make -s test-poly > test-out.txt
           make -s example-poly > demo-out.txt
       - uses: actions/upload-artifact@v4
         with:
