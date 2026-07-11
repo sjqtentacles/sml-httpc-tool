@@ -23,11 +23,11 @@ URIDIR     := lib/github.com/sjqtentacles/sml-uri
 HTTPDIR    := lib/github.com/sjqtentacles/sml-http
 HTTPCDIR   := lib/github.com/sjqtentacles/sml-httpc
 CLI_MLB    := cli/httpc.mlb
-TEST_MLB   := test/test.mlb
+TEST_MLB   := test/sources.mlb
 SRCS       := $(wildcard $(URIDIR)/* $(HTTPDIR)/* $(HTTPCDIR)/* src/* cli/*) $(CLI_MLB)
 TEST_SRCS  := $(wildcard $(URIDIR)/* $(HTTPDIR)/* $(HTTPCDIR)/* src/* test/*) $(TEST_MLB)
 
-.PHONY: all build test test-poly all-tests poly-check smoke clean
+.PHONY: all build test test-poly verify-identical all-tests poly-check smoke clean
 
 all: build
 
@@ -48,7 +48,7 @@ test: $(BIN)/test-mlton
 poly test-poly:
 	printf 'use "$(URIDIR)/percent.sig";\nuse "$(URIDIR)/percent.sml";\nuse "$(URIDIR)/query.sig";\nuse "$(URIDIR)/query.sml";\nuse "$(URIDIR)/uri.sig";\nuse "$(URIDIR)/uri.sml";\nuse "$(HTTPDIR)/headers.sig";\nuse "$(HTTPDIR)/headers.sml";\nuse "$(HTTPDIR)/status.sig";\nuse "$(HTTPDIR)/status.sml";\nuse "$(HTTPDIR)/http.sig";\nuse "$(HTTPDIR)/http.sml";\nuse "$(HTTPCDIR)/httpc.sig";\nuse "$(HTTPCDIR)/httpc.sml";\nuse "src/httpc_tool.sig";\nuse "src/httpc_tool.sml";\nuse "test/harness.sml";\nuse "test/test_port.sml";\nuse "test/entry.sml";\nuse "test/main.sml";\n' | $(POLY) -q --error-exit
 
-all-tests: test test-poly
+all-tests: test test-poly verify-identical
 
 # Compile-only check under Poly/ML: load every source (the Socket-based driver
 # included) so we know the tool stays buildable on Poly/ML too. No network.
@@ -63,3 +63,11 @@ $(BIN):
 
 clean:
 	rm -f $(BIN)/httpc $(BIN)/test-mlton
+
+# The dual-compiler contract: both suites must print byte-identical output.
+# Recursive make -s captures the raw suite stdout regardless of poly strategy.
+verify-identical:
+	$(MAKE) -s test > $(BIN)/out-mlton.txt
+	$(MAKE) -s test-poly > $(BIN)/out-poly.txt
+	diff $(BIN)/out-mlton.txt $(BIN)/out-poly.txt
+	@echo "byte-identical: OK"
