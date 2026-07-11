@@ -17,7 +17,11 @@ val req = { method = "GET", url = "http://example.com/status?fast=1"
 val built = Httpc.buildRequest req
 val () = print ("\nHttpc.buildRequest for GET " ^ #url req ^ ":\n")
 val () = print ("  hostport = " ^ #hostport built ^ "\n")
-val () = print ("  bytes    =\n" ^ #bytes built)
+(* The wire bytes are CRLF-terminated per RFC 9112; shown here with CRLF
+   rendered as LF so the raw \r doesn't end up embedded in this file's
+   printed output. *)
+val () = print ("  bytes    =\n"
+                ^ String.translate (fn #"\r" => "" | c => str c) (#bytes built))
 
 val raw = "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length: 5\r\n\r\nhello"
 val () = print "\nDecoding a canned response with Httpc.newConn/feed:\n"
