@@ -1,5 +1,7 @@
 # sml-httpc-tool
 
+[![CI](https://github.com/sjqtentacles/sml-httpc-tool/actions/workflows/ci.yml/badge.svg)](https://github.com/sjqtentacles/sml-httpc-tool/actions/workflows/ci.yml)
+
 > **Status: IMPURE TOOL — not part of the dual-compiler purity guarantee.**
 
 The quarantined **TCP socket driver** for the pure
